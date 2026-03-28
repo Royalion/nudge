@@ -14,6 +14,18 @@ export interface Activity {
   isLogged: boolean;
   emoji: string;
   completedAt?: string;
+  // Activity adaptation metadata
+  type?: 'sequential' | 'flexible' | 'time_sensitive' | 'frequency' | 'tracking';
+  prerequisiteFor?: string[];
+  minimalVersion?: string;
+  intensity?: number;
+  deadline?: string;
+  frequency?: string;
+  canPostpone?: boolean;
+  skipReason?: string;
+  skipReasonCategory?: 'too_tired' | 'not_enough_time' | 'external_blocker' | 'other';
+  regeneratedFrom?: string;
+  regeneratedAt?: string;
 }
 
 export interface Goal {

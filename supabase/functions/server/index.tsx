@@ -241,28 +241,41 @@ Respond in JSON:
       "text": "Today's primary specific action (e.g., 'Do 30 minutes of cardio' or 'Transfer $50 to savings')",
       "dueDateTier": "today",
       "emoji": "💪",
-      "isLogged": false
+      "isLogged": false,
+      "type": "flexible",
+      "intensity": 7,
+      "minimalVersion": "Lighter version of this activity if user can't do full version",
+      "canPostpone": true
     },
     {
       "id": "activity_2",
       "text": "Secondary activity for today if needed",
       "dueDateTier": "today",
       "emoji": "🎯",
-      "isLogged": false
+      "isLogged": false,
+      "type": "flexible",
+      "intensity": 5,
+      "canPostpone": true
     },
     {
       "id": "activity_3",
       "text": "Weekly milestone (e.g., 'Complete 3 gym sessions this week')",
       "dueDateTier": "week",
       "emoji": "📅",
-      "isLogged": false
+      "isLogged": false,
+      "type": "frequency",
+      "frequency": "as needed",
+      "canPostpone": true
     },
     {
       "id": "activity_4",
       "text": "Another important weekly activity",
       "dueDateTier": "week",
       "emoji": "✨",
-      "isLogged": false
+      "isLogged": false,
+      "type": "flexible",
+      "intensity": 6,
+      "canPostpone": true
     }
   ],
   "weeklyMilestones": [
@@ -300,6 +313,87 @@ Generate the execution plan.`;
 
   } catch (e: any) {
     console.error('Goal Plan Generate Error:', e);
+    if (e.message === 'MISSING_API_KEY') {
+      return c.json({ error: 'MISSING_API_KEY', message: 'OpenAI API key is not configured.' }, 500);
+    }
+    return c.json({ error: 'INTERNAL_SERVER_ERROR', message: e.message }, 500);
+  }
+});
+
+// ── 2B. ACTIVITY REGENERATE ────────────────────────────────────────
+// When user clicks "I can't do this", regenerate activities intelligently
+const ACTIVITY_REGENERATE_PROMPT = `
+You are an expert goal adaptation strategist for the "Nudge" app.
+
+A user cannot complete an activity. Your job is to:
+1. Analyze the activity type (sequential, flexible, time-sensitive, frequency-based, tracking)
+2. Analyze the goal context
+3. Recommend the best strategy:
+   - For SEQUENTIAL activities: Postpone to tomorrow, regenerate full week with extended timeline
+   - For FLEXIBLE activities: Offer minimal version TODAY, or shift across next 3 days
+   - For TIME-SENSITIVE: If deadline impossible, move to next available day + adjust schedule
+   - For FREQUENCY: Redistribute across remaining days in period
+   - For TRACKING: Offer to do later today, or tomorrow
+4. Return new activities that keep user on track to meet their goal
+
+Today's date is ${new Date().toISOString().split('T')[0]}.
+
+Respond in JSON:
+{
+  "strategy": "lighter_today" | "postpone_and_regenerate_week" | "reschedule_day" | "redistribute_frequency" | "later_today",
+  "explanation": "Brief explanation of why we chose this strategy",
+  "newActivities": [
+    {
+      "id": "activity_X",
+      "text": "Specific actionable activity",
+      "dueDateTier": "today" | "week" | "future",
+      "emoji": "📅",
+      "type": "sequential" | "flexible" | "time_sensitive" | "frequency" | "tracking",
+      "minimalVersion": "Lighter alternative if applicable",
+      "intensity": 5,
+      "deadline": "YYYY-MM-DD if time-sensitive",
+      "prerequisiteFor": [],
+      "frequency": "3x/week if applicable",
+      "canPostpone": true,
+      "regeneratedFrom": "original_activity_id"
+    }
+  ],
+  "message": "Friendly message to show user in modal explaining the new plan"
+}
+`;
+
+app.post('/api/activity-regenerate', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { goalTitle, goalCategory, activity, skipReason, skipReasonCategory, currentActivities, goalDeadline } = body;
+
+    if (!activity || !goalTitle) {
+      return c.json({ error: 'BAD_REQUEST', message: 'Activity and goal information required.' }, 400);
+    }
+
+    const userPrompt = `
+Goal: "${goalTitle}" (Category: ${goalCategory})
+${goalDeadline ? `Target Deadline: ${goalDeadline}` : ''}
+
+Activity the user cannot complete:
+- Text: "${activity.text}"
+- Type: ${activity.type || 'flexible'}
+- Intensity: ${activity.intensity || 5}/10
+- Due: ${activity.dueDateTier}
+
+User's reason: ${skipReason || 'Not specified'}
+Reason category: ${skipReasonCategory || 'other'}
+
+Current activities for this goal:
+${currentActivities?.map((a: any) => \`- [\${a.isLogged ? 'x' : ' '}] \${a.text} (dueDateTier: \${a.dueDateTier})\`).join('\\n') || 'None'}
+
+Analyze this activity and user situation. Recommend the best adaptation strategy and generate new activities.`;
+
+    const result = await callOpenAI(ACTIVITY_REGENERATE_PROMPT, userPrompt, 0.7);
+    return c.json(result);
+
+  } catch (e: any) {
+    console.error('Activity Regenerate Error:', e);
     if (e.message === 'MISSING_API_KEY') {
       return c.json({ error: 'MISSING_API_KEY', message: 'OpenAI API key is not configured.' }, 500);
     }

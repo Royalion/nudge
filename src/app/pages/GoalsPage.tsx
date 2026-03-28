@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Button, cn } from '../components/shared';
-import { Target, Plus, ChevronRight, CheckCircle2, PauseCircle, Archive, MoreHorizontal, Zap, TrendingUp, Layers } from 'lucide-react';
+import { Target, Plus, ChevronRight, CheckCircle2, PauseCircle, Archive, MoreHorizontal, Zap, TrendingUp, Layers, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,19 +9,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '../components/ui/dropdown-menu';
-import { useAppStore, Category, GoalStatus, Goal } from '../lib/store';
+import { useAppStore, Category, GoalStatus, Goal, Activity } from '../lib/store';
 import { motion } from 'motion/react';
 import { getCategoryColors } from '../lib/constants';
-
-// Activity Types
-interface Activity {
-  id: string;
-  text: string;
-  dueDateTier: 'today' | 'week' | 'future';
-  isLogged: boolean;
-  emoji: string;
-  completedAt?: string;
-}
 
 interface GoalWithActivities extends Goal {
   activities?: Activity[];
@@ -116,12 +106,162 @@ const EmojiFloat: React.FC<{ x: number; y: number; emoji: string }> = ({ x, y, e
   return null;
 };
 
+// Skip Reason Modal
+interface SkipReasonModalProps {
+  activity: Activity;
+  goal: GoalWithActivities;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (reason: string, category: string) => void;
+  isLoading?: boolean;
+}
+
+const SkipReasonModal: React.FC<SkipReasonModalProps> = ({ activity, goal, isOpen, onClose, onSubmit, isLoading }) => {
+  const [reason, setReason] = useState('');
+  const [category, setCategory] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">Can't complete this activity?</h3>
+        <p className="text-sm text-slate-600 mb-4">"{activity.text}"</p>
+
+        <div className="space-y-3 mb-4">
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700 mb-2 block">What's stopping you?</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-800"
+            >
+              <option value="">Select reason...</option>
+              <option value="too_tired">Too tired</option>
+              <option value="not_enough_time">Not enough time</option>
+              <option value="external_blocker">External blocker</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700 mb-2 block">Tell us more (optional)</span>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g., Office was closed, felt sick, family emergency..."
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 resize-none"
+              rows={3}
+            />
+          </label>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              if (category || reason) {
+                onSubmit(reason, category);
+              }
+            }}
+            disabled={(!category && !reason) || isLoading}
+            className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+          >
+            {isLoading ? 'Analyzing...' : 'Get New Plan'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Regeneration Modal
+interface RegenerationModalProps {
+  newActivities: Activity[];
+  strategy: string;
+  message: string;
+  goal: GoalWithActivities;
+  isOpen: boolean;
+  onAccept: () => void;
+  onModify: () => void;
+  isLoading?: boolean;
+}
+
+const RegenerationModal: React.FC<RegenerationModalProps> = ({
+  newActivities,
+  strategy,
+  message,
+  goal,
+  isOpen,
+  onAccept,
+  onModify,
+  isLoading
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-xl max-h-[80vh] overflow-y-auto">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">New Plan for You</h3>
+        <p className="text-sm text-slate-600 mb-4">{message}</p>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p className="text-sm text-slate-700">
+            <strong>Strategy:</strong> {strategy.replace(/_/g, ' ').toUpperCase()}
+          </p>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          <p className="text-sm font-semibold text-slate-700">Your updated activities:</p>
+          {newActivities.map((activity) => (
+            <div key={activity.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <span className="text-lg">{activity.emoji}</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-900">{activity.text}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {activity.dueDateTier === 'today' && '📍 Today'} {activity.dueDateTier === 'week' && '📅 This week'}{' '}
+                  {activity.dueDateTier === 'future' && '🔮 Future'}
+                  {activity.intensity && ` • Intensity: ${activity.intensity}/10`}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onModify}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Chat with Agent
+          </button>
+          <button
+            onClick={onAccept}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+          >
+            Accept Plan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Activity Item Component
 const ActivityItem: React.FC<{
   activity: Activity;
   onCheck: (activity: Activity, circleElement: HTMLElement) => void;
+  onCantDo: (activity: Activity) => void;
   isDueToday?: boolean;
-}> = ({ activity, onCheck, isDueToday }) => {
+}> = ({ activity, onCheck, onCantDo, isDueToday }) => {
   const circleRef = useRef<HTMLDivElement>(null);
 
   const handleClick = () => {
@@ -131,7 +271,12 @@ const ActivityItem: React.FC<{
   };
 
   return (
-    <div className={cn('flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 transition-all', activity.isLogged && 'bg-blue-50 border-blue-200')}>
+    <div
+      className={cn(
+        'flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 transition-all',
+        activity.isLogged && 'bg-blue-50 border-blue-200'
+      )}
+    >
       <div
         ref={circleRef}
         className={cn(
@@ -140,13 +285,31 @@ const ActivityItem: React.FC<{
         )}
         onClick={handleClick}
       >
-        <span className={cn('text-sm font-bold text-slate-800 opacity-0', activity.isLogged && 'text-white opacity-100')}>✓</span>
+        <span className={cn('text-sm font-bold text-slate-800 opacity-0', activity.isLogged && 'text-white opacity-100')}>
+          ✓
+        </span>
       </div>
       <div className="flex-1">
-        <div className={cn('text-sm font-medium text-slate-900', isDueToday && 'font-bold text-slate-800', activity.isLogged && 'line-through text-slate-500')}>
+        <div
+          className={cn(
+            'text-sm font-medium text-slate-900',
+            isDueToday && 'font-bold text-slate-800',
+            activity.isLogged && 'line-through text-slate-500'
+          )}
+        >
           {activity.text}
         </div>
       </div>
+      <button
+        onClick={() => onCantDo(activity)}
+        disabled={activity.isLogged}
+        className={cn(
+          'text-xs font-semibold px-2 py-1 rounded text-red-600 hover:bg-red-50 transition-colors',
+          activity.isLogged && 'opacity-50 cursor-not-allowed'
+        )}
+      >
+        I can't do this
+      </button>
     </div>
   );
 };
@@ -162,8 +325,18 @@ export function GoalsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
-  const filteredGoals = state.goals.filter(g => g.status === filter) as GoalWithActivities[];
-  const activeGoalsCount = state.goals.filter(g => g.status === 'active').length;
+  // New state for activity adaptation
+  const [skipModalOpen, setSkipModalOpen] = useState(false);
+  const [skipModalActivity, setSkipModalActivity] = useState<Activity | null>(null);
+  const [skipModalGoal, setSkipModalGoal] = useState<GoalWithActivities | null>(null);
+  const [regenerationModalOpen, setRegenerationModalOpen] = useState(false);
+  const [newActivities, setNewActivities] = useState<Activity[]>([]);
+  const [regenerationMessage, setRegenerationMessage] = useState('');
+  const [regenerationStrategy, setRegenerationStrategy] = useState('');
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const filteredGoals = state.goals.filter((g) => g.status === filter) as GoalWithActivities[];
+  const activeGoalsCount = state.goals.filter((g) => g.status === 'active').length;
   const canAddGoal = state.userState?.isPremium || activeGoalsCount < 3;
 
   const updateGoalStatus = (id: string, status: GoalStatus) => {
@@ -193,6 +366,68 @@ export function GoalsPage() {
     setToastMessage(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
   };
 
+  const handleCantDoThis = (activity: Activity, goal: GoalWithActivities) => {
+    setSkipModalActivity(activity);
+    setSkipModalGoal(goal);
+    setSkipModalOpen(true);
+  };
+
+  const handleRegenerateActivities = async (reason: string, reasonCategory: string) => {
+    if (!skipModalActivity || !skipModalGoal) return;
+
+    setIsRegenerating(true);
+    try {
+      const response = await fetch(`${window.location.origin}/api/activity-regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          goalTitle: skipModalGoal.title,
+          goalCategory: skipModalGoal.category,
+          activity: skipModalActivity,
+          skipReason: reason,
+          skipReasonCategory: reasonCategory,
+          currentActivities: skipModalGoal.activities,
+          goalDeadline: skipModalGoal.targetDate
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.newActivities) {
+        setNewActivities(data.newActivities);
+        setRegenerationMessage(data.message);
+        setRegenerationStrategy(data.strategy);
+        setSkipModalOpen(false);
+        setRegenerationModalOpen(true);
+
+        // Show toast
+        setToastMessage('Plan regenerated! Check out the new activities below.');
+      }
+    } catch (error) {
+      console.error('Failed to regenerate activities:', error);
+      setToastMessage('Failed to regenerate activities. Try again.');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleAcceptNewActivities = () => {
+    if (skipModalGoal && newActivities.length > 0) {
+      const updatedGoal = {
+        ...skipModalGoal,
+        activities: newActivities
+      };
+      dispatch({ type: 'UPDATE_GOAL', payload: { id: skipModalGoal.id, updates: updatedGoal } });
+      setRegenerationModalOpen(false);
+      setToastMessage('Activities updated! Keep pushing forward.');
+    }
+  };
+
+  const handleModifyPlan = () => {
+    // Navigate to agent/chat page with context
+    navigate(`/dashboard?modifyGoal=${skipModalGoal?.id}`);
+  };
+
   const toggleAccordion = (goalId: string) => {
     const newSet = new Set(expandedAccordions);
     if (newSet.has(goalId)) {
@@ -203,9 +438,10 @@ export function GoalsPage() {
     setExpandedAccordions(newSet);
   };
 
-  const overallProgress = activeGoalsCount > 0
-    ? Math.round(state.goals.filter(g => g.status === 'active').reduce((acc, g) => acc + g.progress, 0) / activeGoalsCount)
-    : 0;
+  const overallProgress =
+    activeGoalsCount > 0
+      ? Math.round(state.goals.filter((g) => g.status === 'active').reduce((acc, g) => acc + g.progress, 0) / activeGoalsCount)
+      : 0;
 
   // Add styles for animations
   useEffect(() => {
@@ -278,16 +514,23 @@ export function GoalsPage() {
         font-weight: 600;
         color: #1a3a3a;
       }
+
+      @media (max-width: 640px) {
+        .toast-notification {
+          left: 20px;
+          right: 20px;
+          transform: translateX(0);
+          width: auto;
+        }
+      }
     `;
     document.head.appendChild(styleSheet);
     return () => document.head.removeChild(styleSheet);
   }, []);
 
   if (viewMode === 'stack' && filter === 'active' && filteredGoals.length > 0) {
-    // Stack view - active goals only
     return (
       <div className="max-w-3xl mx-auto space-y-6 py-6 px-4 sm:px-6">
-        {/* Header with view toggle */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Goals</h1>
           <div className="flex gap-2">
@@ -297,16 +540,12 @@ export function GoalsPage() {
             >
               List
             </button>
-            <button
-              onClick={() => setViewMode('stack')}
-              className="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white"
-            >
+            <button onClick={() => setViewMode('stack')} className="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white">
               Stack
             </button>
           </div>
         </div>
 
-        {/* Stack view cards */}
         <div className="relative h-96">
           {filteredGoals.map((goal, index) => {
             const position = index - stackIndex;
@@ -322,7 +561,7 @@ export function GoalsPage() {
                 style={{
                   transform: `translateY(${position * 16}px) scale(${1 - position * 0.03}) rotateZ(${-8 * position}deg)`,
                   zIndex: 3 - Math.abs(position),
-                  pointerEvents: isActive ? 'auto' : 'none',
+                  pointerEvents: isActive ? 'auto' : 'none'
                 }}
               >
                 <h2 className="text-xl font-bold text-slate-900 mb-2">{goal.title}</h2>
@@ -333,23 +572,23 @@ export function GoalsPage() {
                 <div className="mt-4 flex-1">
                   <div className="text-sm font-medium text-slate-600 mb-2">Progress: {goal.progress}%</div>
                   <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className={cn('h-full rounded-full', colors.bar)}
-                      style={{ width: `${goal.progress}%` }}
-                    />
+                    <div className={cn('h-full rounded-full', colors.bar)} style={{ width: `${goal.progress}%` }} />
                   </div>
                 </div>
 
                 {goal.activities && goal.activities.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    {goal.activities.filter(a => a.dueDateTier === 'today').map(activity => (
-                      <ActivityItem
-                        key={activity.id}
-                        activity={activity}
-                        onCheck={handleActivityCheck}
-                        isDueToday={true}
-                      />
-                    ))}
+                    {goal.activities
+                      .filter((a) => a.dueDateTier === 'today')
+                      .map((activity) => (
+                        <ActivityItem
+                          key={activity.id}
+                          activity={activity}
+                          onCheck={handleActivityCheck}
+                          onCantDo={() => handleCantDoThis(activity, goal)}
+                          isDueToday={true}
+                        />
+                      ))}
                   </div>
                 )}
 
@@ -379,16 +618,14 @@ export function GoalsPage() {
     );
   }
 
-  // List view - original layout with activity cards
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-6 px-4 sm:px-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Goals</h1>
           <p className="text-sm text-slate-500 font-medium mt-0.5">{activeGoalsCount} active</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <button
             onClick={() => setViewMode('list')}
             className="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white"
@@ -396,10 +633,7 @@ export function GoalsPage() {
             List
           </button>
           {filter === 'active' && (
-            <button
-              onClick={() => setViewMode('stack')}
-              className="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600"
-            >
+            <button onClick={() => setViewMode('stack')} className="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600">
               Stack
             </button>
           )}
@@ -419,7 +653,6 @@ export function GoalsPage() {
         </div>
       </div>
 
-      {/* Overall Progress Summary */}
       {activeGoalsCount > 0 && filter === 'active' && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
@@ -429,18 +662,14 @@ export function GoalsPage() {
             <span className="text-sm font-bold text-slate-900">{overallProgress}%</span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-slate-600 rounded-full transition-all duration-700"
-              style={{ width: `${overallProgress}%` }}
-            />
+            <div className="h-full bg-slate-600 rounded-full transition-all duration-700" style={{ width: `${overallProgress}%` }} />
           </div>
         </div>
       )}
 
-      {/* Filter Tabs */}
       <div className="flex gap-1.5 overflow-x-auto">
         {(['active', 'paused', 'completed', 'archived'] as const).map((t) => {
-          const count = state.goals.filter(g => g.status === t).length;
+          const count = state.goals.filter((g) => g.status === t).length;
           const isActive = filter === t;
           return (
             <button
@@ -449,11 +678,7 @@ export function GoalsPage() {
               disabled={count === 0 && !isActive}
               className={cn(
                 'px-4 py-2.5 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-all',
-                isActive
-                  ? 'bg-slate-800 text-white'
-                  : count === 0
-                  ? 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50'
-                  : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                isActive ? 'bg-slate-800 text-white' : count === 0 ? 'bg-slate-50 text-slate-300 cursor-not-allowed opacity-50' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
               )}
             >
               {t} ({count})
@@ -462,7 +687,6 @@ export function GoalsPage() {
         })}
       </div>
 
-      {/* Goals List */}
       <div className="space-y-4">
         {filteredGoals.length === 0 ? (
           <div className="text-center py-16">
@@ -474,7 +698,7 @@ export function GoalsPage() {
         ) : (
           filteredGoals.map((goal, index) => {
             const colors = getColors(goal.category as string);
-            const dueTodayActivities = goal.activities?.filter(a => a.dueDateTier === 'today') || [];
+            const dueTodayActivities = goal.activities?.filter((a) => a.dueDateTier === 'today') || [];
 
             return (
               <motion.div
@@ -492,9 +716,7 @@ export function GoalsPage() {
                           {goal.category}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-slate-900 text-base">
-                        {goal.title}
-                      </h3>
+                      <h3 className="font-semibold text-slate-900 text-base">{goal.title}</h3>
                     </div>
 
                     <DropdownMenu>
@@ -541,34 +763,27 @@ export function GoalsPage() {
                     </DropdownMenu>
                   </div>
 
-                  {/* Progress Bar */}
                   <div className="mt-3 flex items-center gap-3 mb-4">
                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={cn('h-full rounded-full transition-all', colors.bar)}
-                        style={{ width: `${goal.progress}%` }}
-                      />
+                      <div className={cn('h-full rounded-full transition-all', colors.bar)} style={{ width: `${goal.progress}%` }} />
                     </div>
                     <span className="text-xs font-bold text-slate-500 w-8 text-right">{goal.progress}%</span>
                   </div>
 
-                  {/* Plan Summary */}
                   {goal.plan?.summary && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-slate-700">
-                      {goal.plan.summary}
-                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-slate-700">{goal.plan.summary}</div>
                   )}
 
-                  {/* Due Today Activities */}
                   {dueTodayActivities.length > 0 && (
                     <div className="mb-4">
                       <h4 className="text-xs font-bold text-slate-600 uppercase mb-2">📍 Due Today</h4>
                       <div className="space-y-2">
-                        {dueTodayActivities.map(activity => (
+                        {dueTodayActivities.map((activity) => (
                           <ActivityItem
                             key={activity.id}
                             activity={activity}
                             onCheck={handleActivityCheck}
+                            onCantDo={() => handleCantDoThis(activity, goal)}
                             isDueToday={true}
                           />
                         ))}
@@ -576,7 +791,6 @@ export function GoalsPage() {
                     </div>
                   )}
 
-                  {/* Accordion for all activities */}
                   {goal.activities && goal.activities.length > 0 && (
                     <div className="border-t border-slate-200 pt-3">
                       <button
@@ -591,23 +805,23 @@ export function GoalsPage() {
 
                       {expandedAccordions.has(goal.id) && (
                         <div className="mt-3 space-y-2 pt-3 border-t border-slate-200">
-                          {goal.activities.filter(a => a.dueDateTier !== 'today').map(activity => (
-                            <ActivityItem
-                              key={activity.id}
-                              activity={activity}
-                              onCheck={handleActivityCheck}
-                            />
-                          ))}
+                          {goal.activities
+                            .filter((a) => a.dueDateTier !== 'today')
+                            .map((activity) => (
+                              <ActivityItem
+                                key={activity.id}
+                                activity={activity}
+                                onCheck={handleActivityCheck}
+                                onCantDo={() => handleCantDoThis(activity, goal)}
+                              />
+                            ))}
                         </div>
                       )}
                     </div>
                   )}
 
                   {!goal.plan && goal.status === 'active' && (
-                    <Link
-                      to={`/dashboard?planGoal=${goal.id}`}
-                      className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-700"
-                    >
+                    <Link to={`/dashboard?planGoal=${goal.id}`} className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-700">
                       <Zap className="w-3 h-3" /> Generate execution plan
                       <ChevronRight className="w-3 h-3" />
                     </Link>
@@ -619,14 +833,29 @@ export function GoalsPage() {
         )}
       </div>
 
-      {/* Animations */}
       {confetti && <Confetti x={confetti.x} y={confetti.y} />}
       {emojiPop && <EmojiFloat x={emojiPop.x} y={emojiPop.y} emoji={emojiPop.emoji} />}
-      {toastMessage && (
-        <div className="toast-notification">
-          <strong>{toastMessage}</strong>
-        </div>
-      )}
+      {toastMessage && <div className="toast-notification">{toastMessage}</div>}
+
+      <SkipReasonModal
+        activity={skipModalActivity!}
+        goal={skipModalGoal!}
+        isOpen={skipModalOpen && !!skipModalActivity && !!skipModalGoal}
+        onClose={() => setSkipModalOpen(false)}
+        onSubmit={handleRegenerateActivities}
+        isLoading={isRegenerating}
+      />
+
+      <RegenerationModal
+        newActivities={newActivities}
+        strategy={regenerationStrategy}
+        message={regenerationMessage}
+        goal={skipModalGoal!}
+        isOpen={regenerationModalOpen}
+        onAccept={handleAcceptNewActivities}
+        onModify={handleModifyPlan}
+        isLoading={false}
+      />
     </div>
   );
 }
