@@ -207,7 +207,14 @@ export function LandingPage() {
           style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
           className="max-w-4xl mx-auto text-center relative z-10"
         >
-          
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-base sm:text-lg font-semibold text-stride-600 tracking-tight mb-4"
+          >
+            Welcome Jane
+          </motion.p>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
