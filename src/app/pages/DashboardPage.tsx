@@ -646,10 +646,10 @@ export function DashboardPage() {
 
   const defaultQuickActions = hasGoals
     ? [
-        { label: '✅ Daily check-in', action: () => triggerCheckinInChat() },
         { label: 'Log progress', action: () => setInput('I want to log my progress today') },
         { label: 'Add new goal', action: () => setInput('I want to set a new goal') },
         { label: 'What should I focus on?', action: () => setInput('What should I focus on today?') },
+        { label: 'Review my goals', action: () => setInput('Show me how my goals are going') },
       ]
     : [
         { label: 'Help me set a goal', action: () => setInput('Help me set my first goal') },

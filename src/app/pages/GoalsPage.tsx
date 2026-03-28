@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Button, cn } from '../components/shared';
 import { Target, Plus, ChevronRight, CheckCircle2, PauseCircle, Archive, MoreHorizontal, Zap, TrendingUp, Layers, ChevronDown, Calendar, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,9 +40,35 @@ export function GoalsPage() {
     dispatch({ type: 'ADD_GOAL', payload: newGoal });
   };
 
-  const overallProgress = activeGoalsCount > 0
-    ? Math.round(state.goals.filter(g => g.status === 'active').reduce((acc, g) => acc + g.progress, 0) / activeGoalsCount)
-    : 0;
+  const ENCOURAGING = [
+    "Great job! 💪",
+    "Nice work! Keep it up",
+    "Progress logged ✓",
+    "Logged! You're on a roll",
+  ];
+
+  const handleQuickLog = (goal: Goal) => {
+    const prevLogs = goal.logs ?? [];
+    const prevProgress = goal.progress;
+    const today = new Date().toISOString().split('T')[0];
+    const newLog = { date: today, action: 'Logged via quick-log', progress: goal.progress };
+    const newProgress = Math.min(100, goal.progress + 5);
+    const updatedLogs = [...prevLogs, newLog];
+
+    dispatch({ type: 'UPDATE_GOAL_DATA', payload: { id: goal.id, progress: newProgress, logs: updatedLogs } });
+
+    const msg = ENCOURAGING[Math.floor(Math.random() * ENCOURAGING.length)];
+    toast(msg, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          dispatch({ type: 'UPDATE_GOAL_DATA', payload: { id: goal.id, progress: prevProgress, logs: prevLogs } });
+          toast('Action undone');
+        },
+      },
+    });
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-6 px-4 sm:px-6">
@@ -71,7 +98,6 @@ export function GoalsPage() {
         <div className="bg-white rounded-2xl border border-stride-100/80 p-5">
           <h2 className="text-sm font-bold text-stride-900 mb-4">Today's Check-In</h2>
           {(() => {
-            const { isLoggedToday } = require('../lib/constants');
             const unloggedGoals = state.goals.filter(g => g.status === 'active' && !isLoggedToday(g));
             if (unloggedGoals.length === 0) {
               return (
@@ -86,7 +112,7 @@ export function GoalsPage() {
                   <div key={goal.id} className="flex items-center justify-between bg-stride-50 p-3 rounded-xl">
                     <span className="text-sm font-medium text-stride-800">{goal.title}</span>
                     <Button
-                      onClick={() => navigate(`/dashboard/goals/${goal.id}`)}
+                      onClick={() => handleQuickLog(goal)}
                       size="sm"
                       className="text-xs h-7 px-3"
                     >
@@ -259,11 +285,13 @@ export function GoalsPage() {
                   {/* Quick-Log Button and Activity Accordion */}
                   <div className="mt-4 space-y-2">
                     {goal.status === 'active' && !loggedT && (
-                      <Link to={`/dashboard/goals/${goal.id}`}>
-                        <Button className="w-full text-xs h-8" size="sm">
-                          Log Progress
-                        </Button>
-                      </Link>
+                      <Button
+                        onClick={() => handleQuickLog(goal)}
+                        className="w-full text-xs h-8"
+                        size="sm"
+                      >
+                        Log Progress
+                      </Button>
                     )}
 
                     {/* Activity Accordion */}

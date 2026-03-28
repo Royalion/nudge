@@ -7,7 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { GoalsPage } from "./pages/GoalsPage";
 import { GoalDetailPage } from "./pages/GoalDetailPage";
 import { NewGoalPage } from "./pages/NewGoalPage";
-import { CheckInPage } from "./pages/CheckInPage";
+import { Navigate } from "react-router";
 import { CoachPage } from "./pages/CoachPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -55,7 +55,7 @@ export const router = createBrowserRouter([
               { path: "goals", Component: GoalsPage },
               { path: "goals/new", Component: NewGoalPage },
               { path: "goals/:id", Component: GoalDetailPage },
-              { path: "check-in", Component: CheckInPage },
+              { path: "check-in", element: <Navigate to="/dashboard/goals" replace /> },
               { path: "coach", Component: CoachPage },
               { path: "insights", Component: InsightsPage },
               { path: "settings", Component: SettingsPage },
