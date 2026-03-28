@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Button, cn } from '../components/shared';
 import { Target, Plus, ChevronRight, CheckCircle2, PauseCircle, Archive, MoreHorizontal, Zap, TrendingUp, Layers } from 'lucide-react';
@@ -46,7 +46,7 @@ const Confetti: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   const colors = ['#0d7d7d', '#0a9d9d', '#51cf66', '#ffa94d', '#ff6b6b'];
   const particleCount = 24;
 
-  React.useEffect(() => {
+  useEffect(() => {
     for (let i = 0; i < particleCount; i++) {
       const particle = document.createElement('div');
       const size = Math.random() * 8 + 4;
@@ -85,7 +85,7 @@ const EmojiFloat: React.FC<{ x: number; y: number; emoji: string }> = ({ x, y, e
   const emojis = EMOJI_SETS[emoji] || ['✨'];
   const count = 7;
 
-  React.useEffect(() => {
+  useEffect(() => {
     for (let i = 0; i < count; i++) {
       const emojiEl = document.createElement('div');
       const size = Math.random() * 48 + 32;
@@ -208,7 +208,7 @@ export function GoalsPage() {
     : 0;
 
   // Add styles for animations
-  React.useEffect(() => {
+  useEffect(() => {
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
       @keyframes confetti-burst {
