@@ -11,7 +11,7 @@ import { isLoggedToday } from './lib/constants';
 
 export function RootLayout() {
   return (
-    <div className="min-h-screen bg-[#F7FAFA] flex flex-col font-['Manrope',system-ui,sans-serif] text-stride-900 antialiased">
+    <div className="min-h-[100dvh] bg-[#F7FAFA] flex flex-col font-['Manrope',system-ui,sans-serif] text-stride-900 antialiased">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -33,8 +33,8 @@ export function RootLayout() {
 const navItems = [
   { icon: MessageSquare, label: 'Agent', to: '/dashboard', end: true },
   { icon: Target, label: 'Goals', to: '/dashboard/goals' },
-  { icon: CheckCircle2, label: 'Check-in', to: '/dashboard/check-in' },
   { icon: BarChart3, label: 'Insights', to: '/dashboard/insights' },
+  { icon: Settings, label: 'Settings', to: '/dashboard/settings' },
 ];
 
 // Brand logo SVG component
@@ -89,7 +89,7 @@ export function DashboardLayout() {
             <NudgeLogo size={40} />
           </div>
           <span className="text-sm font-medium text-stride-400">
-            {state._hydrating ? 'Restoring your data...' : 'Loading...'}
+            {state._hydrating ? 'Gathering your information...' : 'Loading...'}
           </span>
         </div>
       </div>
@@ -103,7 +103,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-[#F7FAFA] font-['Manrope',system-ui,sans-serif] text-stride-900 overflow-hidden">
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between px-4 h-14 bg-white/90 backdrop-blur-xl border-b border-stride-100/80 z-50 shrink-0">
+      <div className="md:hidden flex items-center justify-between px-4 h-14 bg-white/90 backdrop-blur-xl border-b border-stride-100/80 z-50 shrink-0 overflow-visible" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2.5 active:opacity-70 transition-opacity"
@@ -282,16 +282,16 @@ export function DashboardLayout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="w-full min-h-full pb-20 md:pb-0">
+          <div className="w-full min-h-full pb-20 md:pb-0" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 80px)' }}>
             <Outlet />
           </div>
         </div>
       </main>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-stride-100/60 pb-[env(safe-area-inset-bottom)] z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-stride-100/60 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}>
         <nav className="flex items-center justify-around px-1 h-16">
-          {navItems.slice(0, 4).map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -310,9 +310,6 @@ export function DashboardLayout() {
                     isActive ? "bg-stride-100" : ""
                   )}>
                     <item.icon className={cn("w-5 h-5", isActive && "text-stride-700")} />
-                    {item.label === 'Check-in' && allLoggedToday && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
-                    )}
                   </div>
                   <span className={cn("text-[10px] font-semibold -mt-0.5", isActive && "text-stride-700")}>{item.label}</span>
                 </>

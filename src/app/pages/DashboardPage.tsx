@@ -101,6 +101,37 @@ export function DashboardPage() {
     }
   }, [state.retentionState?.isRecoveryMode, state.messages.length, dispatch]);
 
+  // Proactive greeting on fresh session
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!state.retentionState?.isRecoveryMode && state.messages.length <= 2 && state._hydrated && user) {
+      const firstName = user.user_metadata?.first_name || user.email?.split('@')[0] || 'there';
+      const unloggedGoals = state.goals.filter(g => g.status === 'active' && !isLoggedToday(g));
+      const unloggedCount = unloggedGoals.length;
+
+      let greetingContent = `Hey ${firstName}! `;
+      if (unloggedCount > 0) {
+        greetingContent += `You have ${unloggedCount} goal${unloggedCount === 1 ? '' : 's'} that need${unloggedCount === 1 ? 's' : ''} attention today. What would you like to focus on?`;
+      } else if (state.goals.length > 0) {
+        greetingContent += `Great to see you! Ready to work on your goals today?`;
+      } else {
+        greetingContent += `Let's build something meaningful together. What goal would you like to work toward?`;
+      }
+
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          id: uid(),
+          role: 'assistant',
+          content: greetingContent,
+          status: 'success',
+          timestamp: Date.now(),
+          actionType: 'NONE'
+        }
+      });
+    }
+  }, [state._hydrated, user, state.goals, state.messages.length, state.retentionState?.isRecoveryMode, dispatch]);
+
   // Auto-scroll chat — smooth on new messages
   useEffect(() => {
     scrollToBottom();
@@ -627,10 +658,49 @@ export function DashboardPage() {
         { label: 'I want to be more productive', action: () => setInput('I want to be more productive') },
       ];
 
-  // Contextual suggestions
+  // Contextual suggestions with dynamic chips
   const quickActions = useMemo(() => {
     const lastAssistant = [...state.messages].reverse().find(m => m.role === 'assistant' && m.status === 'success');
     const lastText = lastAssistant && typeof lastAssistant.content === 'string' ? lastAssistant.content : null;
+
+    // Dynamic contextual chips based on message content
+    let dynamicChips: { label: string; action: () => void }[] | null = null;
+
+    if (lastText && state.messages.length <= 4) {
+      // Fresh session greeting - suggest action chips
+      dynamicChips = [
+        { label: 'View Goals', action: () => navigate('/dashboard/goals') },
+        { label: 'New Goal', action: () => setInput('I want to create a new goal') },
+        { label: 'How am I doing?', action: () => setInput('How am I doing with my goals?') },
+      ];
+    } else if (lastText?.toLowerCase().includes('goal') && lastText?.toLowerCase().includes('create')) {
+      // Goal creation context
+      dynamicChips = [
+        { label: 'Health', action: () => setInput('Health goal') },
+        { label: 'Career', action: () => setInput('Career goal') },
+        { label: 'Learning', action: () => setInput('Learning goal') },
+      ];
+    } else if (lastText?.toLowerCase().includes('progress') || lastText?.toLowerCase().includes('log')) {
+      // Progress/logging context
+      dynamicChips = [
+        { label: 'Log Progress', action: () => setInput('I completed my workout today') },
+        { label: 'View Goals', action: () => navigate('/dashboard/goals') },
+        { label: 'Something else', action: () => setInput('') },
+      ];
+    } else if (lastText?.toLowerCase().includes('frequency') || lastText?.toLowerCase().includes('how often')) {
+      // Frequency selection context
+      dynamicChips = [
+        { label: 'Daily', action: () => setInput('Daily') },
+        { label: 'Weekly', action: () => setInput('Weekly') },
+        { label: '3x per week', action: () => setInput('3 times per week') },
+        { label: 'Weekdays', action: () => setInput('Weekdays') },
+      ];
+    }
+
+    if (dynamicChips) {
+      return dynamicChips;
+    }
+
     const contextual = getContextualSuggestions(lastText);
     if (contextual) {
       return contextual.map(s => ({
@@ -639,7 +709,7 @@ export function DashboardPage() {
       }));
     }
     return defaultQuickActions;
-  }, [state.messages, hasGoals]);
+  }, [state.messages, hasGoals, navigate]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-3.5rem)] md:h-[100dvh]">

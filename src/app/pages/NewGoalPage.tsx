@@ -12,19 +12,20 @@ export function NewGoalPage() {
   const { dispatch } = useAppStore();
 
   useEffect(() => {
-    // Inject a message into the global chat to kick off goal creation
+    // Inject a user message with goal creation intent to kick off the flow
     dispatch({
       type: 'ADD_MESSAGE',
       payload: {
         id: Math.random().toString(),
-        role: 'assistant',
-        content: "Ready to create a new goal! Tell me what you want to achieve and I'll build a complete goal with an execution plan for you.",
+        role: 'user',
+        content: 'I want to create a new goal',
         status: 'success',
         timestamp: Date.now(),
+        actionType: 'NONE',
       }
     });
     navigate('/dashboard', { replace: true });
-  }, []);
+  }, [dispatch, navigate]);
 
   // Brief loading state while redirecting
   return (

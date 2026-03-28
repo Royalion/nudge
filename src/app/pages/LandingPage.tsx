@@ -159,7 +159,7 @@ export function LandingPage() {
     <div ref={containerRef} className="relative min-h-screen bg-[#FAFCFC] text-stride-900 font-['Manrope',system-ui,sans-serif] antialiased overflow-x-hidden">
 
       {/* ─── NAV ─── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-5 py-3.5 bg-white/70 backdrop-blur-2xl border-b border-stride-100/40">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-5 py-3.5 bg-white/70 backdrop-blur-2xl border-b border-stride-100/40" style={{ paddingTop: 'max(env(safe-area-inset-top), 14px)' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <LandingLogo />
@@ -172,10 +172,10 @@ export function LandingPage() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-semibold text-stride-500 hover:text-stride-800 transition-colors hidden sm:block">
+                <Link to="/login" className="text-sm font-semibold text-stride-500 hover:text-stride-800 transition-colors">
                   Log in
                 </Link>
-                <Link to="/signup">
+                <Link to="/signup" className="hidden sm:block">
                   <Button className="text-sm h-9 px-5">Get Started</Button>
                 </Link>
               </>

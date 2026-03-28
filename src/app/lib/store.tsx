@@ -180,9 +180,10 @@ const initialState: State = {
 
 // ────────────────────── PERSISTENCE CONFIGURATION ────────────────────────
 // Actions that should trigger a backend save
+// Note: Messages are session-only and should NOT be persisted
 const PERSISTABLE_ACTIONS = new Set([
   'ADD_GOAL', 'UPDATE_GOAL_STATUS', 'UPDATE_GOAL_DATA', 'DELETE_GOAL',
-  'ADD_MESSAGE', 'MARK_ACTION_HANDLED', 'UPDATE_MESSAGE_STATUS',
+  'MARK_ACTION_HANDLED',
   'UPDATE_NOTIFICATION_SETTINGS', 'UPDATE_RETENTION_STATE',
   'DISMISS_REMINDER_PROMPT', 'UPGRADE_TO_PREMIUM'
 ]);
@@ -235,7 +236,7 @@ const reducer = (state: State, action: ActionType): State => {
       return {
         ...state,
         goals: restored.goals || [],
-        messages: deserializeMessages(restored.messages),
+        messages: [...defaultMessages], // Messages are session-only, always start fresh
         notificationSettings: { ...state.notificationSettings, ...(restored.notificationSettings || {}) },
         retentionState: { ...state.retentionState, ...(restored.retentionState || {}) },
         userState: { ...state.userState, ...(restored.userState || {}) },
@@ -352,7 +353,7 @@ function useDebouncedSave(state: State, accessToken: string | null) {
       const currentState = stateRef.current;
       const persistable: PersistableState = {
         goals: currentState.goals,
-        messages: serializeMessages(currentState.messages),
+        messages: [], // Messages are session-only, not persisted
         notificationSettings: currentState.notificationSettings,
         retentionState: {
           ...currentState.retentionState,
@@ -402,7 +403,7 @@ function useDebouncedSave(state: State, accessToken: string | null) {
 
       const persistable: PersistableState = {
         goals: currentState.goals,
-        messages: serializeMessages(currentState.messages),
+        messages: [], // Messages are session-only, not persisted
         notificationSettings: currentState.notificationSettings,
         retentionState: { ...currentState.retentionState, lastActiveDate: new Date().toISOString() },
         userState: currentState.userState,
@@ -457,7 +458,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           type: 'HYDRATE_STATE',
           payload: {
             goals: [],
-            messages: [],
+            messages: [], // Session-only, will be filled with defaultMessages
             notificationSettings: initialState.notificationSettings,
             retentionState: initialState.retentionState,
             userState: initialState.userState,
@@ -496,7 +497,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
             type: 'HYDRATE_STATE',
             payload: {
               goals: [],
-              messages: [],
+              messages: [], // Session-only, will be filled with defaultMessages
               notificationSettings: initialState.notificationSettings,
               retentionState: initialState.retentionState,
               userState: { isPremium: false, createdAt: new Date().toISOString() },
@@ -509,7 +510,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           type: 'HYDRATE_STATE',
           payload: {
             goals: [],
-            messages: [],
+            messages: [], // Session-only, will be filled with defaultMessages
             notificationSettings: initialState.notificationSettings,
             retentionState: initialState.retentionState,
             userState: initialState.userState,

@@ -281,38 +281,6 @@ export function InsightsPage() {
         ))}
       </div>
 
-      {/* Overall Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-            <BarChart3 className="w-4 h-4 text-gray-400" /> {selectedGoal ? 'Goal Progress' : 'Overall Progress'}
-          </h2>
-          <span className="text-2xl font-bold text-gray-900">{overallProgress}%</span>
-        </div>
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-          <motion.div
-            className={cn("h-full rounded-full", selectedGoal ? getColors(selectedGoal.category as string).bar : "bg-gray-900")}
-            initial={{ width: 0 }}
-            animate={{ width: `${overallProgress}%` }}
-            transition={{ duration: 1, ease: 'easeOut' }}
-          />
-        </div>
-        <p className="text-xs text-gray-400 mt-2.5">
-          {overallProgress === 0
-            ? "Start logging actions to see your progress grow here."
-            : overallProgress >= 70
-            ? "Excellent momentum! You're ahead of schedule."
-            : overallProgress >= 40
-            ? "Good progress. Stay consistent to accelerate."
-            : "Early stages. Focus on building daily habits first."}
-        </p>
-      </motion.div>
-
       {/* Weekly Activity */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -585,46 +553,56 @@ export function InsightsPage() {
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
-            {recentActivity.map((item, i) => {
-              const colors = getColors(item.goalCategory);
-              const date = new Date(item.date);
-              const isToday = new Date().toDateString() === date.toDateString();
-              const isYesterday = new Date(Date.now() - 86400000).toDateString() === date.toDateString();
-              const dateLabel = isToday ? 'Today' : isYesterday ? 'Yesterday' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          <>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+              {recentActivity.slice(0, 3).map((item, i) => {
+                const colors = getColors(item.goalCategory);
+                const date = new Date(item.date);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const isYesterday = new Date(Date.now() - 86400000).toDateString() === date.toDateString();
+                const dateLabel = isToday ? 'Today' : isYesterday ? 'Yesterday' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-              return (
-                <div key={i} className="p-4 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                      <div className="min-w-0">
-                        <span className="text-sm font-medium text-gray-900 block truncate">
-                          {item.action}
-                        </span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {!selectedGoal && (
-                            <>
-                              <div className={cn("w-1.5 h-1.5 rounded-full", colors.bg)} />
-                              <span className="text-[10px] font-semibold text-gray-400 truncate">{item.goalTitle}</span>
-                              <span className="text-[10px] text-gray-300">·</span>
-                            </>
-                          )}
-                          <span className="text-[10px] text-gray-400 font-semibold">{dateLabel}</span>
+                return (
+                  <div key={i} className="p-4 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium text-gray-900 block truncate">
+                            {item.action}
+                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {!selectedGoal && (
+                              <>
+                                <div className={cn("w-1.5 h-1.5 rounded-full", colors.bg)} />
+                                <span className="text-[10px] font-semibold text-gray-400 truncate">{item.goalTitle}</span>
+                                <span className="text-[10px] text-gray-300">·</span>
+                              </>
+                            )}
+                            <span className="text-[10px] text-gray-400 font-semibold">{dateLabel}</span>
+                          </div>
                         </div>
                       </div>
+                      <span className="text-xs font-bold text-gray-400 shrink-0 ml-3">{item.progress}%</span>
                     </div>
-                    <span className="text-xs font-bold text-gray-400 shrink-0 ml-3">{item.progress}%</span>
+                    {item.note && (
+                      <div className="ml-8 mt-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 italic">
+                        "{item.note}"
+                      </div>
+                    )}
                   </div>
-                  {item.note && (
-                    <div className="ml-8 mt-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 italic">
-                      "{item.note}"
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            {recentActivity.length > 3 && (
+              <button
+                onClick={() => {/* Could expand to show all or navigate to detailed view */}}
+                className="text-sm font-semibold text-stride-600 hover:text-stride-700 inline-flex items-center gap-1.5 mt-3 transition-colors"
+              >
+                View all activity <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </>
         )}
       </motion.div>
 
