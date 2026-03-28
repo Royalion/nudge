@@ -413,11 +413,13 @@ export function GoalsPage() {
 
   const handleAcceptNewActivities = () => {
     if (skipModalGoal && newActivities.length > 0) {
-      const updatedGoal = {
-        ...skipModalGoal,
-        activities: newActivities
-      };
-      dispatch({ type: 'UPDATE_GOAL', payload: { id: skipModalGoal.id, updates: updatedGoal } });
+      dispatch({
+        type: 'UPDATE_GOAL_DATA',
+        payload: {
+          id: skipModalGoal.id,
+          activities: newActivities
+        }
+      });
       setRegenerationModalOpen(false);
       setToastMessage('Activities updated! Keep pushing forward.');
     }
@@ -529,6 +531,10 @@ export function GoalsPage() {
   }, []);
 
   if (viewMode === 'stack' && filter === 'active' && filteredGoals.length > 0) {
+    // Limit visible cards to 5, with remaining cards replacing the 5th one
+    const MAX_VISIBLE_STACKS = 5;
+    const visibleGoals = filteredGoals.slice(stackIndex, stackIndex + MAX_VISIBLE_STACKS);
+
     return (
       <div className="max-w-3xl mx-auto space-y-6 py-6 px-4 sm:px-6">
         <div className="flex items-center justify-between">
@@ -546,22 +552,23 @@ export function GoalsPage() {
           </div>
         </div>
 
-        <div className="relative h-96">
-          {filteredGoals.map((goal, index) => {
-            const position = index - stackIndex;
+        <div className="relative min-h-[480px]">
+          {visibleGoals.map((goal, index) => {
             const colors = getColors(goal.category as string);
-            const isActive = position === 0;
+            const isActive = index === 0;
 
             return (
               <motion.div
                 key={goal.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-white rounded-2xl border border-slate-100 shadow-lg p-6 flex flex-col"
+                className="absolute inset-x-0 bg-white rounded-2xl border border-slate-100 shadow-lg p-6 flex flex-col"
                 style={{
-                  transform: `translateY(${position * 16}px) scale(${1 - position * 0.03}) rotateZ(${-8 * position}deg)`,
-                  zIndex: 3 - Math.abs(position),
-                  pointerEvents: isActive ? 'auto' : 'none'
+                  top: `${index * 12}px`,
+                  transform: `scale(${1 - index * 0.02}) rotateZ(${-4 * index}deg)`,
+                  zIndex: MAX_VISIBLE_STACKS - index,
+                  pointerEvents: isActive ? 'auto' : 'none',
+                  width: 'calc(100% - 0px)'
                 }}
               >
                 <h2 className="text-xl font-bold text-slate-900 mb-2">{goal.title}</h2>
@@ -602,8 +609,8 @@ export function GoalsPage() {
                       ← Back
                     </button>
                     <button
-                      onClick={() => setStackIndex(Math.min(filteredGoals.length - 1, stackIndex + 1))}
-                      disabled={stackIndex === filteredGoals.length - 1}
+                      onClick={() => setStackIndex(Math.min(filteredGoals.length - MAX_VISIBLE_STACKS, stackIndex + 1))}
+                      disabled={stackIndex >= filteredGoals.length - MAX_VISIBLE_STACKS}
                       className="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 disabled:opacity-50"
                     >
                       Next →
