@@ -7,15 +7,6 @@ import { projectId, publicAnonKey } from '/utils/supabase/info';
 export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
 export type Category = 'Health' | 'Money' | 'Weight' | 'Career' | 'Mind' | 'Relationships' | 'Home' | 'Discipline' | 'Productivity' | 'Dynamic';
 
-export interface Activity {
-  id: string;
-  text: string;
-  dueDateTier: 'today' | 'week' | 'future';
-  isLogged: boolean;
-  emoji: string;
-  completedAt?: string;
-}
-
 export interface Goal {
   id: string;
   title: string;
@@ -45,7 +36,6 @@ export interface Goal {
     todayFocus?: string;
     todayActionLabel?: string;
   };
-  activities?: Activity[];
   logs?: LogEntry[];
   replanCount?: number;
   bestStreak?: number;

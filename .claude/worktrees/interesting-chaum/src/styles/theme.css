@@ -1,0 +1,221 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #F7FAFA;
+  --foreground: #163B42;
+  --card: #ffffff;
+  --card-foreground: #163B42;
+  --popover: #ffffff;
+  --popover-foreground: #163B42;
+  --primary: #1D4E56;
+  --primary-foreground: #ffffff;
+  --secondary: #E4F2F5;
+  --secondary-foreground: #1D4E56;
+  --muted: #E4F2F5;
+  --muted-foreground: #5A7A80;
+  --accent: #C8E4E9;
+  --accent-foreground: #1D4E56;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(59, 136, 149, 0.12);
+  --input: transparent;
+  --input-background: #F0F7F8;
+  --switch-background: #B0CDD2;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #3B8895;
+  --chart-1: #3B8895;
+  --chart-2: #6BB5C0;
+  --chart-3: #1D4E56;
+  --chart-4: #9ECFD7;
+  --chart-5: #C8E4E9;
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #163B42;
+  --sidebar-primary: #1D4E56;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #F0F7F8;
+  --sidebar-accent-foreground: #1D4E56;
+  --sidebar-border: rgba(59, 136, 149, 0.1);
+  --sidebar-ring: #3B8895;
+
+  /* Brand tokens */
+  --stride-50: #F2F9FA;
+  --stride-100: #E4F2F5;
+  --stride-200: #C8E4E9;
+  --stride-300: #9ECFD7;
+  --stride-400: #6BB5C0;
+  --stride-500: #4CA0AD;
+  --stride-600: #3B8895;
+  --stride-700: #2C6E78;
+  --stride-800: #1D4E56;
+  --stride-900: #163B42;
+}
+
+.dark {
+  --background: #0F2A2F;
+  --foreground: #E4F2F5;
+  --card: #163B42;
+  --card-foreground: #E4F2F5;
+  --popover: #163B42;
+  --popover-foreground: #E4F2F5;
+  --primary: #6BB5C0;
+  --primary-foreground: #0F2A2F;
+  --secondary: #1D4E56;
+  --secondary-foreground: #E4F2F5;
+  --muted: #1D4E56;
+  --muted-foreground: #9ECFD7;
+  --accent: #1D4E56;
+  --accent-foreground: #E4F2F5;
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: rgba(107, 181, 192, 0.15);
+  --input: #1D4E56;
+  --ring: #4CA0AD;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #6BB5C0;
+  --chart-2: #4CA0AD;
+  --chart-3: #9ECFD7;
+  --chart-4: #3B8895;
+  --chart-5: #2C6E78;
+  --sidebar: #163B42;
+  --sidebar-foreground: #E4F2F5;
+  --sidebar-primary: #6BB5C0;
+  --sidebar-primary-foreground: #0F2A2F;
+  --sidebar-accent: #1D4E56;
+  --sidebar-accent-foreground: #E4F2F5;
+  --sidebar-border: rgba(107, 181, 192, 0.15);
+  --sidebar-ring: #4CA0AD;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand color scale for direct use */
+  --color-stride-50: var(--stride-50);
+  --color-stride-100: var(--stride-100);
+  --color-stride-200: var(--stride-200);
+  --color-stride-300: var(--stride-300);
+  --color-stride-400: var(--stride-400);
+  --color-stride-500: var(--stride-500);
+  --color-stride-600: var(--stride-600);
+  --color-stride-700: var(--stride-700);
+  --color-stride-800: var(--stride-800);
+  --color-stride-900: var(--stride-900);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Manrope', system-ui, sans-serif;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  /* Mobile tap targets */
+  @media (pointer: coarse) {
+    button, a, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
+
+/* Utility: hide scrollbar for mobile swipe areas */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

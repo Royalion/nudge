@@ -202,7 +202,6 @@ Your plan must be:
 - Include implementation intention rules (if-then plans)
 - Include lower-friction fallback alternatives for when the user is blocked/tired
 - Realistic given the user's stated resources and baseline
-- Include concrete daily/weekly activities to track progress
 
 Respond in JSON:
 {
@@ -234,36 +233,6 @@ Respond in JSON:
   "actions": [
     { "title": "Primary daily/weekly action", "frequency": "daily", "isFallback": false },
     { "title": "Fallback micro-action", "frequency": "daily", "isFallback": true }
-  ],
-  "activities": [
-    {
-      "id": "activity_1",
-      "text": "Today's primary specific action (e.g., 'Do 30 minutes of cardio' or 'Transfer $50 to savings')",
-      "dueDateTier": "today",
-      "emoji": "💪",
-      "isLogged": false
-    },
-    {
-      "id": "activity_2",
-      "text": "Secondary activity for today if needed",
-      "dueDateTier": "today",
-      "emoji": "🎯",
-      "isLogged": false
-    },
-    {
-      "id": "activity_3",
-      "text": "Weekly milestone (e.g., 'Complete 3 gym sessions this week')",
-      "dueDateTier": "week",
-      "emoji": "📅",
-      "isLogged": false
-    },
-    {
-      "id": "activity_4",
-      "text": "Another important weekly activity",
-      "dueDateTier": "week",
-      "emoji": "✨",
-      "isLogged": false
-    }
   ],
   "weeklyMilestones": [
     "Week 1-2: ...",
