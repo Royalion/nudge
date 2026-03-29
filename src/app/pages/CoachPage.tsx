@@ -346,6 +346,7 @@ export function CoachPage() {
             plan: payload.plan,
             pace: payload.pace,
             metric: payload.metric,
+            activities: payload.activities,
             replanCount: 0,
           }
         });
