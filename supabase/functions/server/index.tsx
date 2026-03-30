@@ -447,7 +447,18 @@ CREATE_GOAL (IMPORTANT — this is a COMPLETE goal with execution plan):
     "unit": "e.g. miles, pages, dollars, sessions",
     "targetValue": 100,
     "currentValue": 0
-  }
+  },
+  "activities": [
+    {
+      "id": "activity_1",
+      "text": "Specific actionable activity",
+      "dueDateTier": "today"|"week"|"future",
+      "emoji": "📅",
+      "type": "sequential"|"flexible"|"time_sensitive"|"frequency"|"tracking",
+      "intensity": 5,
+      "minimalVersion": "Lighter alternative if user gets stuck"
+    }
+  ]
 }
 
 CREATE_COMPOUND_GOALS (array of exactly 3 goal objects, same schema as CREATE_GOAL):
@@ -456,19 +467,26 @@ CREATE_COMPOUND_GOALS (array of exactly 3 goal objects, same schema as CREATE_GO
     "title": "...", "category": "Health", "targetDate": "YYYY-MM-DD", "description": "...",
     "linkedGroupName": "Get Healthy",
     "plan": { ... same as CREATE_GOAL plan ... },
-    "pace": { ... }, "metric": { ... }
+    "pace": { ... }, "metric": { ... },
+    "activities": [ ... 5-7 activities per goal, same schema as CREATE_GOAL ... ]
   },
-  { ... second goal ... },
-  { ... third goal ... }
+  { ... second goal with activities ... },
+  { ... third goal with activities ... }
 ]
-Each goal must include a "linkedGroupName" field with the user's broad aspiration.
+Each goal must include a "linkedGroupName" field with the user's broad aspiration and activities array with 5-7 generated activities.
 
 GOAL CREATION FLOW:
 - When a user wants to create a new goal, do NOT create it immediately.
 - First, use action: "NONE" and ask 2-4 smart clarifying questions in your "text" field. Ask about timeline, current level, constraints, motivation — whatever is most relevant to THIS specific goal.
-- Once you have enough information (after the user answers), THEN use CREATE_GOAL with the FULL payload including plan, pace, and metric.
-- The goal will be automatically created AND its execution plan will be saved in one shot.
-- In your "text" field for the CREATE_GOAL action, give a brief celebratory summary and mention the user can view the full plan in the Goals section.
+- Once you have enough information (after the user answers), THEN use CREATE_GOAL with the FULL payload including plan, pace, metric, AND activities.
+- ACTIVITIES GENERATION: Generate 5-7 specific, actionable activities that break down the goal into concrete daily/weekly tasks. For each activity:
+  * Set dueDateTier to distribute across "today" (1-2 tasks), "week" (3-4 tasks), and "future" (1-2 tasks)
+  * Choose appropriate type: "sequential" (must do first), "flexible" (can do anytime), "time_sensitive" (has deadline), "frequency" (do X times), "tracking" (monitor metric)
+  * Set intensity 1-10 based on effort required
+  * Include minimalVersion for flexible alternatives when user struggles
+  * Use relevant emoji that matches the activity
+- The goal will be automatically created AND its execution plan with activities will be saved in one shot.
+- In your "text" field for the CREATE_GOAL action, give a brief celebratory summary and mention the user can view the full plan and activities in the Goals section.
 
 COMPOUND GOALS:
 - When a user requests a broad, multi-faceted goal (e.g. "I want to get healthy", "I want to improve my life", "I want to be more disciplined"), recognize this as a COMPOUND goal.
